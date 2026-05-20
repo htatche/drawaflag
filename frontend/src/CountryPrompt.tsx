@@ -2,13 +2,17 @@ import { useEffect, useState } from 'react';
 
 import './CountryPrompt.css';
 
-type Country = Readonly<{
+export type Country = Readonly<{
   cca2: string;
   name: string;
 }>;
 
-export function CountryPrompt() {
-  const [countryName, setCountryName] = useState<string | null>(null);
+type CountryPromptProps = {
+  onCountryChange: (country: Country | null) => void;
+};
+
+export function CountryPrompt({ onCountryChange }: CountryPromptProps) {
+  const [country, setCountry] = useState<Country | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -25,7 +29,8 @@ export function CountryPrompt() {
       const countries = (await response.json()) as Country[];
       const randomCountry = countries[Math.floor(Math.random() * countries.length)];
 
-      setCountryName(randomCountry?.name ?? null);
+      setCountry(randomCountry ?? null);
+      onCountryChange(randomCountry ?? null);
     }
 
     loadRandomCountry().catch((error: unknown) => {
@@ -37,13 +42,13 @@ export function CountryPrompt() {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [onCountryChange]);
 
-  if (!countryName) return null;
+  if (!country) return null;
 
   return (
     <div className="country-prompt" aria-live="polite">
-      {countryName}
+      {country.name}
     </div>
   );
 }

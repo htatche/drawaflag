@@ -3,6 +3,7 @@ import { Brush, Eraser, Redo2, Square, Undo2 } from 'lucide-react';
 import {
   DefaultColorStyle,
   DefaultFillStyle,
+  type Editor,
   GeoShapeGeoStyle,
   Tldraw,
   track,
@@ -34,17 +35,25 @@ const palette: PaletteColor[] = [
   { name: 'grey', hex: '#6b7280' },
 ];
 
-export function PaintEditor() {
+type PaintEditorProps = {
+  onEditorReady: (editor: Editor) => void;
+};
+
+export function PaintEditor({ onEditorReady }: PaintEditorProps) {
   return (
     <section className="paint-editor" aria-label="Paint editor">
       <Tldraw hideUi>
-        <PaintControls />
+        <PaintControls onEditorReady={onEditorReady} />
       </Tldraw>
     </section>
   );
 }
 
-const PaintControls = track(() => {
+type PaintControlsProps = {
+  onEditorReady: (editor: Editor) => void;
+};
+
+const PaintControls = track(({ onEditorReady }: PaintControlsProps) => {
   const editor = useEditor();
   const currentTool = editor.getCurrentToolId();
   const canUndo = editor.getCanUndo();
@@ -52,6 +61,10 @@ const PaintControls = track(() => {
   const currentColor =
     editor.getSharedStyles().getAsKnownValue(DefaultColorStyle) ??
     editor.getStyleForNextShape(DefaultColorStyle);
+
+  useEffect(() => {
+    onEditorReady(editor);
+  }, [editor, onEditorReady]);
 
   useEffect(() => {
     const theme = structuredClone(editor.getTheme('default') ?? editor.getCurrentTheme());

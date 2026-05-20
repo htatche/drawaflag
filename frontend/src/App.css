@@ -4,3 +4,92 @@
   min-height: 100vh;
   background: #f8faf9;
 }
+
+.app-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 0 24px 6px;
+}
+
+.send-flag-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 168px;
+  min-height: 56px;
+  padding: 0 20px;
+  border: 1px solid #102027;
+  border-radius: 8px;
+  background: #102027;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.send-flag-button:hover:not(:disabled) {
+  background: #1d3741;
+}
+
+.send-flag-button[data-state='sending'] {
+  background: #1d3741;
+}
+
+.send-flag-button[data-state='sent'] {
+  animation: send-confirm 700ms ease both;
+  border-color: #148f5a;
+  background: #148f5a;
+  box-shadow: 0 0 0 8px rgba(20, 143, 90, 0.16);
+}
+
+.send-flag-button:disabled {
+  cursor: default;
+}
+
+.send-flag-button:disabled:not([data-state='sending']) {
+  opacity: 0.45;
+}
+
+.send-flag-spinner {
+  animation: send-spin 900ms linear infinite;
+}
+
+@keyframes send-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes send-confirm {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .app-header {
+    grid-template-columns: 1fr;
+    padding: 0 16px 8px;
+  }
+
+  .send-flag-button {
+    width: 100%;
+  }
+}
