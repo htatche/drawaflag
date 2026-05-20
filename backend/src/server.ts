@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { COUNTRIES } from './countries.js';
-import type { Country } from './countries.js';
+import { evaluateFlagMatch } from './evaluateFlag.js';
 
 const server = Fastify({
   logger: true,
@@ -16,6 +16,8 @@ const flagUploadsDirectory = path.resolve('uploads/flags');
 type FlagUploadParams = {
   cca2: string;
 };
+
+type Country = (typeof COUNTRIES)[number];
 
 const allowedFlagImageTypes = new Map([
   ['image/png', 'png'],
@@ -46,7 +48,7 @@ server.get('/health', async () => ({
 
 server.get('/countries', async () => COUNTRIES);
 
-server.get('/countries/names', async () => COUNTRIES.map((country) => country.name));
+server.get('/countries/names', async () => COUNTRIES.map((country) => country.name.common));
 
 server.post<{ Body: Buffer; Params: FlagUploadParams }>(
   '/countries/:cca2/flag',
@@ -82,6 +84,14 @@ server.post<{ Body: Buffer; Params: FlagUploadParams }>(
     const countryDirectory = path.join(flagUploadsDirectory, cca2);
     const filename = `${uploadId}.${extension}`;
     const filePath = path.join(countryDirectory, filename);
+    const submittedFlagDataUrl = `data:${contentType};base64,${request.body.toString('base64')}`;
+
+    const evaluation = await evaluateFlagMatch({
+      countryCode: country.cca2,
+      countryName: country.name.common,
+      referenceFlagDataUrl: country.img,
+      submittedFlagDataUrl,
+    });
 
     await mkdir(countryDirectory, { recursive: true });
     await writeFile(filePath, request.body);
@@ -95,6 +105,7 @@ server.post<{ Body: Buffer; Params: FlagUploadParams }>(
         size: request.body.length,
         filename,
       },
+      evaluation,
     });
   },
 );

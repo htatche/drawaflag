@@ -1,5 +1,6 @@
-import { useEffect, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Brush, Eraser, Redo2, Square, Undo2 } from 'lucide-react';
+import { DEFAULT_THEME, type TLTheme } from '@tldraw/editor';
 import {
   DefaultColorStyle,
   DefaultFillStyle,
@@ -7,7 +8,6 @@ import {
   GeoShapeGeoStyle,
   Tldraw,
   track,
-  useEditor,
   type TLDefaultColorStyle,
   type TLGeoShape,
 } from 'tldraw';
@@ -15,8 +15,11 @@ import 'tldraw/tldraw.css';
 
 import './PaintEditor.css';
 
+type PaletteColorName = TLDefaultColorStyle | `paint-${string}`;
+
 type PaletteColor = {
-  name: TLDefaultColorStyle;
+  name: PaletteColorName;
+  label: string;
   hex: string;
 };
 
@@ -25,36 +28,100 @@ type SwatchStyle = CSSProperties & {
 };
 
 const palette: PaletteColor[] = [
-  { name: 'black', hex: '#111827' },
-  { name: 'red', hex: '#dc2626' },
-  { name: 'orange', hex: '#ea580c' },
-  { name: 'yellow', hex: '#facc15' },
-  { name: 'green', hex: '#16a34a' },
-  { name: 'blue', hex: '#2563eb' },
-  { name: 'violet', hex: '#7c3aed' },
-  { name: 'grey', hex: '#6b7280' },
+  { name: 'black', label: 'Black', hex: '#111827' },
+  { name: 'grey', label: 'Grey', hex: '#6b7280' },
+  { name: 'paint-slate', label: 'Slate', hex: '#334155' },
+  { name: 'red', label: 'Red', hex: '#dc2626' },
+  { name: 'light-red', label: 'Light red', hex: '#f87171' },
+  { name: 'paint-rose', label: 'Rose', hex: '#e11d48' },
+  { name: 'paint-pink', label: 'Pink', hex: '#ec4899' },
+  { name: 'orange', label: 'Orange', hex: '#ea580c' },
+  { name: 'paint-amber', label: 'Amber', hex: '#f59e0b' },
+  { name: 'yellow', label: 'Yellow', hex: '#facc15' },
+  { name: 'paint-lime', label: 'Lime', hex: '#84cc16' },
+  { name: 'green', label: 'Green', hex: '#16a34a' },
+  { name: 'light-green', label: 'Light green', hex: '#4ade80' },
+  { name: 'paint-emerald', label: 'Emerald', hex: '#059669' },
+  { name: 'paint-teal', label: 'Teal', hex: '#0d9488' },
+  { name: 'paint-cyan', label: 'Cyan', hex: '#06b6d4' },
+  { name: 'paint-sky', label: 'Sky', hex: '#0ea5e9' },
+  { name: 'blue', label: 'Blue', hex: '#2563eb' },
+  { name: 'light-blue', label: 'Light blue', hex: '#60a5fa' },
+  { name: 'paint-indigo', label: 'Indigo', hex: '#4f46e5' },
+  { name: 'violet', label: 'Violet', hex: '#7c3aed' },
+  { name: 'light-violet', label: 'Light violet', hex: '#c084fc' },
+  { name: 'paint-purple', label: 'Purple', hex: '#9333ea' },
+  { name: 'paint-fuchsia', label: 'Fuchsia', hex: '#c026d3' },
 ];
+
+const toTldrawColor = (color: PaletteColorName) => color as TLDefaultColorStyle;
+
+const createThemeColor = (hex: string) => ({
+  solid: hex,
+  fill: hex,
+  linedFill: hex,
+  frameHeadingStroke: hex,
+  frameHeadingFill: '#ffffff',
+  frameStroke: hex,
+  frameFill: '#ffffff',
+  frameText: '#111827',
+  noteFill: hex,
+  noteText: '#111827',
+  semi: hex,
+  pattern: hex,
+  highlightSrgb: hex,
+  highlightP3: hex,
+});
+
+const createPaintTheme = (): TLTheme => {
+  const theme = structuredClone(DEFAULT_THEME);
+
+  for (const mode of ['light', 'dark'] as const) {
+    const colors = theme.colors[mode] as Record<string, string | ReturnType<typeof createThemeColor>>;
+
+    for (const { hex, name } of palette) {
+      colors[name] = createThemeColor(hex);
+    }
+  }
+
+  return theme;
+};
+
+const paintTheme = createPaintTheme();
+const paintThemes = { default: paintTheme };
 
 type PaintEditorProps = {
   onEditorReady: (editor: Editor) => void;
 };
 
 export function PaintEditor({ onEditorReady }: PaintEditorProps) {
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  const handleMount = useCallback(
+    (mountedEditor: Editor) => {
+      setEditor(mountedEditor);
+      onEditorReady(mountedEditor);
+
+      return () => {
+        setEditor(null);
+      };
+    },
+    [onEditorReady],
+  );
+
   return (
     <section className="paint-editor" aria-label="Paint editor">
-      <Tldraw hideUi>
-        <PaintControls onEditorReady={onEditorReady} />
-      </Tldraw>
+      <Tldraw hideUi onMount={handleMount} themes={paintThemes} />
+      {editor ? <PaintControls editor={editor} /> : null}
     </section>
   );
 }
 
 type PaintControlsProps = {
-  onEditorReady: (editor: Editor) => void;
+  editor: Editor;
 };
 
-const PaintControls = track(({ onEditorReady }: PaintControlsProps) => {
-  const editor = useEditor();
+const PaintControls = track(({ editor }: PaintControlsProps) => {
   const currentTool = editor.getCurrentToolId();
   const canUndo = editor.getCanUndo();
   const canRedo = editor.getCanRedo();
@@ -63,23 +130,6 @@ const PaintControls = track(({ onEditorReady }: PaintControlsProps) => {
     editor.getStyleForNextShape(DefaultColorStyle);
 
   useEffect(() => {
-    onEditorReady(editor);
-  }, [editor, onEditorReady]);
-
-  useEffect(() => {
-    const theme = structuredClone(editor.getTheme('default') ?? editor.getCurrentTheme());
-
-    for (const mode of ['light', 'dark'] as const) {
-      for (const { name } of palette) {
-        const color = theme.colors[mode][name];
-
-        if (typeof color !== 'string') {
-          color.semi = color.solid;
-        }
-      }
-    }
-
-    editor.updateTheme(theme);
     editor.updateInstanceState({ isToolLocked: true });
     editor.setCurrentTool('draw');
     editor.setStyleForNextShapes(GeoShapeGeoStyle, 'rectangle');
@@ -155,9 +205,11 @@ const PaintControls = track(({ onEditorReady }: PaintControlsProps) => {
     editor.redo();
   };
 
-  const setColor = (color: TLDefaultColorStyle) => {
-    editor.setStyleForSelectedShapes(DefaultColorStyle, color);
-    editor.setStyleForNextShapes(DefaultColorStyle, color);
+  const setColor = (color: PaletteColorName) => {
+    const tldrawColor = toTldrawColor(color);
+
+    editor.setStyleForSelectedShapes(DefaultColorStyle, tldrawColor);
+    editor.setStyleForNextShapes(DefaultColorStyle, tldrawColor);
   };
 
   return (
@@ -219,13 +271,13 @@ const PaintControls = track(({ onEditorReady }: PaintControlsProps) => {
       <div className="paint-palette" aria-label="Color palette">
         {palette.map((color) => (
           <button
-            aria-label={`${color.name} brush`}
+            aria-label={`${color.label} brush`}
             className="paint-swatch"
             data-active={currentColor === color.name}
             key={color.name}
             onClick={() => setColor(color.name)}
             style={{ '--swatch-color': color.hex } as SwatchStyle}
-            title={color.name}
+            title={color.label}
             type="button"
           />
         ))}

@@ -13,7 +13,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  width: min(calc(100vw - 32px), 640px);
+  width: min(calc(100vw - 32px), 700px);
   padding: 10px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 8px;
@@ -74,7 +74,8 @@
 
 .paint-swatch {
   aspect-ratio: 1;
-  min-width: 30px;
+  width: 100%;
+  min-width: 0;
   border: 2px solid rgba(15, 23, 42, 0.14);
   border-radius: 6px;
   background: var(--swatch-color);
@@ -113,6 +114,11 @@
   }
 
   .paint-icon-button {
+    width: 100%;
+  }
+
+  .paint-palette {
+    grid-template-columns: repeat(6, minmax(34px, 1fr));
     width: 100%;
   }
 }
