@@ -22,6 +22,7 @@ type EvaluateFlagInput = {
 
 const openRouterBaseUrl = 'https://openrouter.ai/api/v1';
 const modelName = 'openrouter/free';
+const timeoutMilliseconds = 30_000;
 
 export class FlagEvaluationConfigurationError extends Error {
   constructor() {
@@ -45,44 +46,53 @@ export async function evaluateFlagMatch({
     apiKey: openRouterApiKey,
     model: modelName,
     temperature: 0,
+    timeout: timeoutMilliseconds,
     useResponsesApi: false,
     configuration: {
       baseURL: openRouterBaseUrl,
     },
   });
 
-  const response = await flagJudge.invoke([
-    new SystemMessage(
-      [
-        'You are judging whether a user-drawn flag matches the official country flag.',
-        'Compare the submitted drawing to the reference flag image.',
-        'Reward correct colors, stripe orientation, symbols, layout, and relative placement.',
-        'Do not require pixel perfection because the submitted image may be hand drawn.',
-        'Return only valid JSON with keys: matches, score, summary, differences.',
-        'matches must be boolean. score must be a number from 0 to 1. differences must be an array of strings.',
-      ].join(' '),
-    ),
-    new HumanMessage({
-      content: [
-        {
-          type: 'text',
-          text: `Country: ${countryName} (${countryCode}). First image is the official reference flag. Second image is the user submission.`,
-        },
-        {
-          type: 'image_url',
-          image_url: {
-            url: referenceFlagDataUrl,
+  const response = await flagJudge.invoke(
+    [
+      new SystemMessage(
+        [
+          'You are judging whether a user-drawn flag matches the official country flag.',
+          'Compare the submitted drawing to the reference flag image.',
+          'Reward correct colors, stripe orientation, symbols, layout, and relative placement.',
+          'Do not require pixel perfection because the submitted image may be hand drawn.',
+          'Not all details must be present, focus on the overall layout and colors.',
+          'Return only valid JSON with keys: matches, score, summary, differences.',
+          'score must be a number from 1 to 10, where 1 is no resemblance, 5 is around a 50% match, and 10 is an exact or near-exact match. matches must be true only when score is greater than 5. differences must be an array of strings.',
+        ].join(' '),
+      ),
+      new HumanMessage({
+        content: [
+          {
+            type: 'text',
+            text: `Country: ${countryName} (${countryCode}). First image is the official reference flag. Second image is the user submission.`,
           },
-        },
-        {
-          type: 'image_url',
-          image_url: {
-            url: submittedFlagDataUrl,
+          {
+            type: 'image_url',
+            image_url: {
+              url: referenceFlagDataUrl,
+            },
           },
-        },
-      ],
-    }),
-  ]);
+          {
+            type: 'image_url',
+            image_url: {
+              url: submittedFlagDataUrl,
+            },
+          },
+        ],
+      }),
+    ],
+    {
+      response_format: {
+        type: 'json_object',
+      },
+    },
+  );
 
   const parsed = parseFlagEvaluation(response.content);
 
@@ -106,9 +116,11 @@ function parseFlagEvaluation(content: unknown): FlagEvaluation {
     throw new Error('Flag evaluator returned an invalid response shape.');
   }
 
+  const score = Math.max(1, Math.min(10, json.score));
+
   return {
-    matches: json.matches,
-    score: Math.max(0, Math.min(1, json.score)),
+    matches: score > 5,
+    score,
     summary: json.summary,
     differences: json.differences,
   };

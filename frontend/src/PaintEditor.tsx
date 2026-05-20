@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { Brush, Eraser, Redo2, Square, Undo2 } from 'lucide-react';
+import { Brush, Eraser, Lasso, Redo2, Square, Star, Undo2 } from 'lucide-react';
 import { DEFAULT_THEME, type TLTheme } from '@tldraw/editor';
 import {
   DefaultColorStyle,
@@ -9,6 +9,7 @@ import {
   Tldraw,
   track,
   type TLDefaultColorStyle,
+  type TLDrawShape,
   type TLGeoShape,
 } from 'tldraw';
 import 'tldraw/tldraw.css';
@@ -51,7 +52,7 @@ const palette: PaletteColor[] = [
   { name: 'violet', label: 'Violet', hex: '#7c3aed' },
   { name: 'light-violet', label: 'Light violet', hex: '#c084fc' },
   { name: 'paint-purple', label: 'Purple', hex: '#9333ea' },
-  { name: 'paint-fuchsia', label: 'Fuchsia', hex: '#c026d3' },
+  { name: 'white', label: 'White', hex: '#ffffff' },
 ];
 
 const toTldrawColor = (color: PaletteColorName) => color as TLDefaultColorStyle;
@@ -75,14 +76,14 @@ const createThemeColor = (hex: string) => ({
 
 const createPaintTheme = (): TLTheme => {
   const theme = structuredClone(DEFAULT_THEME);
-
-  for (const mode of ['light', 'dark'] as const) {
-    const colors = theme.colors[mode] as Record<string, string | ReturnType<typeof createThemeColor>>;
-
+  const applyPaletteColors = (colors: Record<string, string | ReturnType<typeof createThemeColor>>) => {
     for (const { hex, name } of palette) {
       colors[name] = createThemeColor(hex);
     }
-  }
+  };
+
+  applyPaletteColors(theme.colors.light as Record<string, string | ReturnType<typeof createThemeColor>>);
+  applyPaletteColors(theme.colors.dark as Record<string, string | ReturnType<typeof createThemeColor>>);
 
   return theme;
 };
@@ -111,7 +112,7 @@ export function PaintEditor({ onEditorReady }: PaintEditorProps) {
 
   return (
     <section className="paint-editor" aria-label="Paint editor">
-      <Tldraw hideUi onMount={handleMount} themes={paintThemes} />
+      <Tldraw colorScheme="light" hideUi onMount={handleMount} themes={paintThemes} />
       {editor ? <PaintControls editor={editor} /> : null}
     </section>
   );
@@ -128,17 +129,23 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
   const currentColor =
     editor.getSharedStyles().getAsKnownValue(DefaultColorStyle) ??
     editor.getStyleForNextShape(DefaultColorStyle);
+  const currentGeo =
+    editor.getSharedStyles().getAsKnownValue(GeoShapeGeoStyle) ??
+    editor.getStyleForNextShape(GeoShapeGeoStyle);
+  const currentFill =
+    editor.getSharedStyles().getAsKnownValue(DefaultFillStyle) ??
+    editor.getStyleForNextShape(DefaultFillStyle);
 
   useEffect(() => {
     editor.updateInstanceState({ isToolLocked: true });
     editor.setCurrentTool('draw');
     editor.setStyleForNextShapes(GeoShapeGeoStyle, 'rectangle');
-    editor.setStyleForNextShapes(DefaultFillStyle, 'fill');
+    editor.setStyleForNextShapes(DefaultFillStyle, 'none');
     editor.setStyleForNextShapes(DefaultColorStyle, 'black');
   }, [editor]);
 
   useEffect(() => {
-    const fillSquareShape = (shape: TLGeoShape): TLGeoShape => {
+    const fillGeoShape = (shape: TLGeoShape): TLGeoShape => {
       const color = editor.getStyleForNextShape(DefaultColorStyle);
 
       if (shape.props.fill === 'fill' && shape.props.color === color) {
@@ -155,14 +162,57 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
       };
     };
 
+    const fillDrawShape = (shape: TLDrawShape): TLDrawShape => {
+      if (shape.props.fill !== 'fill') {
+        return shape;
+      }
+
+      const color = editor.getStyleForNextShape(DefaultColorStyle);
+
+      if (!shape.props.isComplete) {
+        if (shape.props.color === color) {
+          return shape;
+        }
+
+        return {
+          ...shape,
+          props: {
+            ...shape.props,
+            color,
+          },
+        };
+      }
+
+      if (shape.props.color === color && shape.props.isClosed) {
+        return shape;
+      }
+
+      return {
+        ...shape,
+        props: {
+          ...shape.props,
+          color,
+          isClosed: true,
+        },
+      };
+    };
+
     const cleanupCreate = editor.sideEffects.registerBeforeCreateHandler(
       'shape',
-      (shape) => (shape.type === 'geo' ? fillSquareShape(shape) : shape),
+      (shape) => {
+        if (shape.type === 'geo') return fillGeoShape(shape);
+        if (shape.type === 'draw') return fillDrawShape(shape);
+        return shape;
+      },
     );
 
     const cleanupChange = editor.sideEffects.registerBeforeChangeHandler(
       'shape',
-      (_, next) => (next.type === 'geo' ? fillSquareShape(next) : next),
+      (_, next) => {
+        if (next.type === 'geo') return fillGeoShape(next);
+        if (next.type === 'draw') return fillDrawShape(next);
+        return next;
+      },
     );
 
     return () => {
@@ -175,6 +225,7 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
     editor.run(() => {
       editor.selectNone();
       editor.updateInstanceState({ isToolLocked: true });
+      editor.setStyleForNextShapes(DefaultFillStyle, 'none');
       editor.setCurrentTool('draw');
     });
   };
@@ -186,6 +237,25 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
       editor.setStyleForNextShapes(GeoShapeGeoStyle, 'rectangle');
       editor.setStyleForNextShapes(DefaultFillStyle, 'fill');
       editor.setCurrentTool('geo');
+    });
+  };
+
+  const selectStarTool = () => {
+    editor.run(() => {
+      editor.selectNone();
+      editor.updateInstanceState({ isToolLocked: true, isChangingStyle: true });
+      editor.setStyleForNextShapes(GeoShapeGeoStyle, 'star');
+      editor.setStyleForNextShapes(DefaultFillStyle, 'fill');
+      editor.setCurrentTool('geo');
+    });
+  };
+
+  const selectFreeformTool = () => {
+    editor.run(() => {
+      editor.selectNone();
+      editor.updateInstanceState({ isToolLocked: true, isChangingStyle: true });
+      editor.setStyleForNextShapes(DefaultFillStyle, 'fill');
+      editor.setCurrentTool('draw');
     });
   };
 
@@ -240,7 +310,7 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
         <button
           aria-label="Brush tool"
           className="paint-icon-button"
-          data-active={currentTool === 'draw'}
+          data-active={currentTool === 'draw' && currentFill !== 'fill'}
           onClick={selectDrawTool}
           title="Brush"
           type="button"
@@ -250,12 +320,32 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
         <button
           aria-label="Square tool"
           className="paint-icon-button"
-          data-active={currentTool === 'geo'}
+          data-active={currentTool === 'geo' && currentGeo === 'rectangle'}
           onClick={selectSquareTool}
           title="Square"
           type="button"
         >
           <Square aria-hidden="true" size={20} strokeWidth={2.25} />
+        </button>
+        <button
+          aria-label="Star tool"
+          className="paint-icon-button"
+          data-active={currentTool === 'geo' && currentGeo === 'star'}
+          onClick={selectStarTool}
+          title="Star"
+          type="button"
+        >
+          <Star aria-hidden="true" size={20} strokeWidth={2.25} />
+        </button>
+        <button
+          aria-label="Freeform fill tool"
+          className="paint-icon-button"
+          data-active={currentTool === 'draw' && currentFill === 'fill'}
+          onClick={selectFreeformTool}
+          title="Freeform fill"
+          type="button"
+        >
+          <Lasso aria-hidden="true" size={20} strokeWidth={2.25} />
         </button>
         <button
           aria-label="Eraser tool"
@@ -276,6 +366,7 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
             data-active={currentColor === color.name}
             key={color.name}
             onClick={() => setColor(color.name)}
+            data-color={color.name}
             style={{ '--swatch-color': color.hex } as SwatchStyle}
             title={color.label}
             type="button"

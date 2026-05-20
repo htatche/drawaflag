@@ -4,14 +4,17 @@ import './CountryPrompt.css';
 
 export type Country = Readonly<{
   cca2: string;
-  name: string;
+  name: {
+    common: string;
+  };
 }>;
 
 type CountryPromptProps = {
   onCountryChange: (country: Country | null) => void;
+  refreshKey: number;
 };
 
-export function CountryPrompt({ onCountryChange }: CountryPromptProps) {
+export function CountryPrompt({ onCountryChange, refreshKey }: CountryPromptProps) {
   const [country, setCountry] = useState<Country | null>(null);
 
   useEffect(() => {
@@ -42,13 +45,13 @@ export function CountryPrompt({ onCountryChange }: CountryPromptProps) {
     return () => {
       controller.abort();
     };
-  }, [onCountryChange]);
+  }, [onCountryChange, refreshKey]);
 
   if (!country) return null;
 
   return (
     <div className="country-prompt" aria-live="polite">
-      {country.name}
+      {country.name.common}
     </div>
   );
 }
