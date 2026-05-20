@@ -1,0 +1,118 @@
+.paint-editor {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #f8faf9;
+}
+
+.paint-controls {
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(calc(100vw - 32px), 640px);
+  padding: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.16);
+  transform: translateX(-50%);
+}
+
+.paint-action-list,
+.paint-tool-list {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.paint-action-list {
+  grid-template-columns: repeat(2, 40px);
+}
+
+.paint-tool-list {
+  grid-template-columns: repeat(3, 40px);
+}
+
+.paint-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #102027;
+  cursor: pointer;
+}
+
+.paint-icon-button:hover:not(:disabled) {
+  border-color: rgba(15, 23, 42, 0.42);
+}
+
+.paint-icon-button[data-active='true'] {
+  border-color: #102027;
+  background: #102027;
+  color: #ffffff;
+}
+
+.paint-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.paint-palette {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(8, minmax(30px, 1fr));
+  gap: 8px;
+}
+
+.paint-swatch {
+  aspect-ratio: 1;
+  min-width: 30px;
+  border: 2px solid rgba(15, 23, 42, 0.14);
+  border-radius: 6px;
+  background: var(--swatch-color);
+  cursor: pointer;
+}
+
+.paint-swatch:hover {
+  border-color: rgba(15, 23, 42, 0.42);
+}
+
+.paint-swatch[data-active='true'] {
+  border-color: #102027;
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px #102027;
+}
+
+@media (max-width: 520px) {
+  .paint-controls {
+    align-items: stretch;
+    flex-direction: column;
+    bottom: 12px;
+  }
+
+  .paint-action-list,
+  .paint-tool-list {
+    width: 100%;
+  }
+
+  .paint-action-list {
+    grid-template-columns: repeat(2, minmax(40px, 1fr));
+  }
+
+  .paint-tool-list {
+    grid-template-columns: repeat(3, minmax(40px, 1fr));
+  }
+
+  .paint-icon-button {
+    width: 100%;
+  }
+}
