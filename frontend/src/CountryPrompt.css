@@ -1,0 +1,20 @@
+.country-prompt {
+  align-self: center;
+  justify-self: center;
+  width: min(calc(100% - 32px), 1040px);
+  padding: 24px 16px 18px;
+  color: #102027;
+  font-size: 72px;
+  font-weight: 900;
+  line-height: 0.95;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .country-prompt {
+    padding: 18px 12px 14px;
+    font-size: 40px;
+  }
+}

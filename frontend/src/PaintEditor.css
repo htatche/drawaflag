@@ -1,6 +1,6 @@
 .paint-editor {
-  position: fixed;
-  inset: 0;
+  position: relative;
+  min-height: 0;
   overflow: hidden;
   background: #f8faf9;
 }

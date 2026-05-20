@@ -1,5 +1,6 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
+import { COUNTRIES } from './countries.js';
 
 const server = Fastify({
   logger: true,
@@ -13,6 +14,10 @@ server.get('/health', async () => ({
   ok: true,
   service: 'drawaflag-api',
 }));
+
+server.get('/countries', async () => COUNTRIES);
+
+server.get('/countries/names', async () => COUNTRIES.map((country) => country.name));
 
 const port = Number(process.env.PORT ?? 3000);
 const host = process.env.HOST ?? '127.0.0.1';

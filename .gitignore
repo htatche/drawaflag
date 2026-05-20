@@ -1,7 +1,9 @@
 node_modules
 dist
+backend/uploads
 .DS_Store
 *.local
 .env
 .env.*
 !.env.example
+frontend/tsconfig.tsbuildinfo
