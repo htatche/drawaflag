@@ -1,0 +1,52 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: dev:frontend",
+      "type": "npm",
+      "script": "dev:frontend",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "Local:.*http://127\\.0\\.0\\.1:5173/.*"
+        }
+      }
+    },
+    {
+      "label": "npm: dev:backend",
+      "type": "npm",
+      "script": "dev:backend",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "fastify",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": ".*Server listening at http://127\\.0\\.0\\.1:3000.*"
+        }
+      }
+    },
+    {
+      "label": "npm: dev",
+      "dependsOn": ["npm: dev:frontend", "npm: dev:backend"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: build",
+      "type": "npm",
+      "script": "build",
+      "group": "build",
+      "problemMatcher": "$tsc"
+    }
+  ]
+}
