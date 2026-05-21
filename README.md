@@ -14,6 +14,12 @@ Flag drawing game where the app shows you a country name and you need to draw th
 - 1-day-only project (LLM-assisted) to learn LangChain basics
 - Put into practice React/TS skills recently learned in my other pet project https://github.com/htatche/flagxword
 
+## Screenshots
+
+![Draw a flag game prompt](assets/image.png)
+![Flag drawing result](assets/image-1.png)
+![Flag drawing canvas](assets/image-2.png)
+
 ## Run locally
 
 ### Requirements
