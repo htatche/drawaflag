@@ -10,10 +10,11 @@
   z-index: 10;
   left: 50%;
   bottom: 20px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
-  width: min(calc(100vw - 32px), 700px);
+  width: min(calc(100vw - 32px), 880px);
   padding: 10px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 8px;
@@ -67,7 +68,6 @@
 
 .paint-palette {
   display: grid;
-  flex: 1;
   grid-template-columns: repeat(8, minmax(30px, 1fr));
   gap: 8px;
 }
@@ -104,10 +104,80 @@
     0 0 0 4px #102027;
 }
 
+.check-flag-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 150px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid #102027;
+  border-radius: 8px;
+  background: #102027;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.check-flag-button:hover:not(:disabled) {
+  background: #1d3741;
+  transform: translateY(-1px);
+}
+
+.check-flag-button[data-state='sending'] {
+  background: #1d3741;
+}
+
+.check-flag-button[data-state='sent'] {
+  animation: check-confirm 700ms ease both;
+  border-color: #148f5a;
+  background: #148f5a;
+  box-shadow: 0 0 0 8px rgba(20, 143, 90, 0.16);
+}
+
+.check-flag-button:disabled {
+  cursor: default;
+}
+
+.check-flag-button:disabled:not([data-state='sending']) {
+  opacity: 0.45;
+}
+
+.check-flag-spinner {
+  animation: check-spin 900ms linear infinite;
+}
+
+@keyframes check-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes check-confirm {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
 @media (max-width: 520px) {
   .paint-controls {
-    align-items: stretch;
-    flex-direction: column;
+    grid-template-columns: 1fr 1fr;
     bottom: 12px;
   }
 
@@ -121,6 +191,7 @@
   }
 
   .paint-tool-list {
+    grid-column: 1 / -1;
     grid-template-columns: repeat(5, minmax(48px, 1fr));
   }
 
@@ -129,7 +200,15 @@
   }
 
   .paint-palette {
+    grid-column: 1 / -1;
     grid-template-columns: repeat(6, minmax(34px, 1fr));
     width: 100%;
+  }
+
+  .check-flag-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 52px;
+    font-size: 16px;
   }
 }

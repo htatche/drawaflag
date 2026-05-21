@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { Brush, Eraser, Lasso, Redo2, Square, Star, Undo2 } from 'lucide-react';
+import {
+  Brush,
+  Check,
+  Eraser,
+  Lasso,
+  LoaderCircle,
+  Redo2,
+  Send,
+  Square,
+  Star,
+  Undo2,
+} from 'lucide-react';
 import { DEFAULT_THEME, type TLTheme } from '@tldraw/editor';
 import {
   DefaultColorStyle,
@@ -93,9 +104,16 @@ const paintThemes = { default: paintTheme };
 
 type PaintEditorProps = {
   onEditorReady: (editor: Editor) => void;
+  checkFlagButton: {
+    ariaLabel: string;
+    disabled: boolean;
+    label: string;
+    onClick: () => void;
+    state: 'idle' | 'sending' | 'sent';
+  };
 };
 
-export function PaintEditor({ onEditorReady }: PaintEditorProps) {
+export function PaintEditor({ checkFlagButton, onEditorReady }: PaintEditorProps) {
   const [editor, setEditor] = useState<Editor | null>(null);
 
   const handleMount = useCallback(
@@ -113,16 +131,17 @@ export function PaintEditor({ onEditorReady }: PaintEditorProps) {
   return (
     <section className="paint-editor" aria-label="Paint editor">
       <Tldraw colorScheme="light" hideUi onMount={handleMount} themes={paintThemes} />
-      {editor ? <PaintControls editor={editor} /> : null}
+      {editor ? <PaintControls checkFlagButton={checkFlagButton} editor={editor} /> : null}
     </section>
   );
 }
 
 type PaintControlsProps = {
+  checkFlagButton: PaintEditorProps['checkFlagButton'];
   editor: Editor;
 };
 
-const PaintControls = track(({ editor }: PaintControlsProps) => {
+const PaintControls = track(({ checkFlagButton, editor }: PaintControlsProps) => {
   const currentTool = editor.getCurrentToolId();
   const canUndo = editor.getCanUndo();
   const canRedo = editor.getCanRedo();
@@ -373,6 +392,28 @@ const PaintControls = track(({ editor }: PaintControlsProps) => {
           />
         ))}
       </div>
+      <button
+        aria-label={checkFlagButton.ariaLabel}
+        className="check-flag-button"
+        data-state={checkFlagButton.state}
+        disabled={checkFlagButton.disabled}
+        onClick={checkFlagButton.onClick}
+        type="button"
+      >
+        {checkFlagButton.state === 'sending' ? (
+          <LoaderCircle
+            aria-hidden="true"
+            className="check-flag-spinner"
+            size={22}
+            strokeWidth={2.5}
+          />
+        ) : checkFlagButton.state === 'sent' ? (
+          <Check aria-hidden="true" size={22} strokeWidth={3} />
+        ) : (
+          <Send aria-hidden="true" size={22} strokeWidth={2.5} />
+        )}
+        <span>{checkFlagButton.label}</span>
+      </button>
     </div>
   );
 });

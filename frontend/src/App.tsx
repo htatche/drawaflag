@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Box } from '@tldraw/editor';
-import { Check, LoaderCircle, Send } from 'lucide-react';
 import type { Editor } from 'tldraw';
 import './App.css';
 import { PaintEditor } from './PaintEditor';
 import { CountryPrompt, type Country } from './CountryPrompt';
+import { MatchResult, type MatchResultData } from './MatchResult';
 
 type FlagEvaluation = {
   matches: boolean;
@@ -21,20 +21,15 @@ type FlagSubmissionResponse = {
   evaluation: FlagEvaluation;
 };
 
-type MatchResult = {
-  tone: 'success' | 'miss' | 'error';
-  message: string;
-  reasons?: string[];
-  flagImage?: string;
-  flagAlt?: string;
-};
+const matchDisplayMilliseconds = 5000;
+const noMatchDisplayMilliseconds = 10000;
 
 function App() {
   const [country, setCountry] = useState<Country | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [sendState, setSendState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [countryRefreshKey, setCountryRefreshKey] = useState(0);
-  const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
+  const [matchResult, setMatchResult] = useState<MatchResultData | null>(null);
 
   const moveToNextCountry = () => {
     if (editor) {
@@ -98,12 +93,14 @@ function App() {
         tone: 'success',
         message: `Correct. Nice work drawing ${country.name.common}.`,
         reasons: [evaluation.summary, ...evaluation.differences].filter(Boolean),
+        durationMilliseconds: matchDisplayMilliseconds,
         flagImage: evaluatedCountry.img,
         flagAlt: `${country.name.common} flag`,
       });
       window.setTimeout(() => {
         setSendState('idle');
-      }, 1600);
+        moveToNextCountry();
+      }, matchDisplayMilliseconds);
       return;
     }
 
@@ -111,64 +108,40 @@ function App() {
       tone: 'miss',
       message: `Not quite. That did not match ${country.name.common}. Next country.`,
       reasons: [evaluation.summary, ...evaluation.differences].filter(Boolean),
+      durationMilliseconds: noMatchDisplayMilliseconds,
+      flagImage: evaluatedCountry.img,
+      flagAlt: `${country.name.common} flag`,
     });
 
     window.setTimeout(() => {
       setSendState('idle');
       moveToNextCountry();
-    }, 2200);
+    }, noMatchDisplayMilliseconds);
   };
 
   const sendButtonDisabled = !country || !editor || sendState === 'sending';
-  const sendButtonLabel = sendState === 'sent' ? 'Sent' : 'Send flag';
+  const sendButtonLabel = sendState === 'sent' ? 'Checked' : 'Check flag';
 
   return (
     <main className="app-shell">
       <header className="app-header">
         <CountryPrompt onCountryChange={setCountry} refreshKey={countryRefreshKey} />
-        <button
-          aria-label={country ? `Send flag for ${country.name.common}` : 'Send flag'}
-          className="send-flag-button"
-          data-state={sendState}
-          disabled={sendButtonDisabled}
-          onClick={() => {
+        {matchResult ? <MatchResult result={matchResult} /> : null}
+      </header>
+      <PaintEditor
+        checkFlagButton={{
+          ariaLabel: country ? `Check flag for ${country.name.common}` : 'Check flag',
+          disabled: sendButtonDisabled,
+          label: sendButtonLabel,
+          onClick: () => {
             sendFlag().catch((error: unknown) => {
               console.error(error);
             });
-          }}
-          type="button"
-        >
-          {sendState === 'sending' ? (
-            <LoaderCircle
-              aria-hidden="true"
-              className="send-flag-spinner"
-              size={24}
-              strokeWidth={2.5}
-            />
-          ) : sendState === 'sent' ? (
-            <Check aria-hidden="true" size={24} strokeWidth={3} />
-          ) : (
-            <Send aria-hidden="true" size={24} strokeWidth={2.5} />
-          )}
-          <span>{sendButtonLabel}</span>
-        </button>
-        {matchResult ? (
-          <div className="match-result" data-tone={matchResult.tone} role="status">
-            {matchResult.flagImage ? (
-              <img
-                alt={matchResult.flagAlt ?? ''}
-                className="match-result-flag"
-                src={matchResult.flagImage}
-              />
-            ) : null}
-            <span className="match-result-message">{matchResult.message}</span>
-            {matchResult.reasons?.length ? (
-              <span className="match-result-reasons">{matchResult.reasons.join(' ')}</span>
-            ) : null}
-          </div>
-        ) : null}
-      </header>
-      <PaintEditor onEditorReady={setEditor} />
+          },
+          state: sendState,
+        }}
+        onEditorReady={setEditor}
+      />
     </main>
   );
 }

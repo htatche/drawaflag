@@ -1,0 +1,123 @@
+.match-result {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  justify-content: start;
+  column-gap: 16px;
+  row-gap: 4px;
+  justify-self: center;
+  width: min(calc(100vw - 48px), 760px);
+  min-height: 72px;
+  padding: 14px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.match-result-message,
+.match-result-reasons {
+  min-width: 0;
+}
+
+.match-result-message {
+  align-self: end;
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.match-result-reasons {
+  grid-column: 2;
+  align-self: start;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  opacity: 0.82;
+}
+
+.match-result-countdown {
+  width: 44px;
+  height: 44px;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  justify-self: end;
+  transform: rotate(-90deg);
+}
+
+.match-result-countdown-track,
+.match-result-countdown-progress {
+  fill: none;
+  stroke-width: 5;
+}
+
+.match-result-countdown-track {
+  stroke: currentColor;
+  opacity: 0.18;
+}
+
+.match-result-countdown-progress {
+  animation: countdown-circle var(--countdown-duration) linear forwards;
+  stroke: currentColor;
+  stroke-dasharray: 106.81;
+  stroke-dashoffset: 106.81;
+  stroke-linecap: round;
+}
+
+.match-result-flag {
+  width: 96px;
+  height: 64px;
+  grid-row: span 2;
+  flex: 0 0 auto;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 4px;
+  background: #ffffff;
+  object-fit: contain;
+}
+
+.match-result[data-tone='success'] {
+  border-color: rgba(20, 143, 90, 0.32);
+  background: #e9f8ef;
+  color: #116b45;
+}
+
+.match-result[data-tone='miss'] {
+  border-color: rgba(184, 92, 0, 0.3);
+  background: #fff4e6;
+  color: #8a4b00;
+}
+
+.match-result[data-tone='error'] {
+  border-color: rgba(190, 18, 60, 0.28);
+  background: #fff1f2;
+  color: #be123c;
+}
+
+@keyframes countdown-circle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .match-result {
+    grid-template-columns: 1fr;
+    width: 100%;
+    row-gap: 10px;
+    text-align: center;
+  }
+
+  .match-result-flag,
+  .match-result-message,
+  .match-result-reasons,
+  .match-result-countdown {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: center;
+  }
+
+  .match-result-message {
+    font-size: 16px;
+  }
+}
