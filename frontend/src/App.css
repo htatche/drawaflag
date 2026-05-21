@@ -15,9 +15,10 @@
 
 .match-result {
   grid-column: 1 / -1;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
+  justify-content: start;
   gap: 14px;
   justify-self: center;
   max-width: min(calc(100vw - 48px), 760px);
@@ -31,9 +32,23 @@
   text-align: center;
 }
 
+.match-result-message,
+.match-result-reasons {
+  min-width: 0;
+}
+
+.match-result-reasons {
+  grid-column: 2;
+  margin-top: -8px;
+  font-size: 13px;
+  font-weight: 650;
+  opacity: 0.82;
+}
+
 .match-result-flag {
   width: 72px;
   height: 48px;
+  grid-row: span 2;
   flex: 0 0 auto;
   border: 1px solid rgba(15, 23, 42, 0.16);
   border-radius: 4px;
@@ -140,9 +155,16 @@
   }
 
   .match-result {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 8px;
     max-width: 100%;
     font-size: 15px;
+  }
+
+  .match-result-flag,
+  .match-result-reasons {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: center;
   }
 }

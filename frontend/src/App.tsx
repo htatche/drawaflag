@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Box } from '@tldraw/editor';
 import { Check, LoaderCircle, Send } from 'lucide-react';
 import type { Editor } from 'tldraw';
 import './App.css';
@@ -23,6 +24,7 @@ type FlagSubmissionResponse = {
 type MatchResult = {
   tone: 'success' | 'miss' | 'error';
   message: string;
+  reasons?: string[];
   flagImage?: string;
   flagAlt?: string;
 };
@@ -95,6 +97,7 @@ function App() {
       setMatchResult({
         tone: 'success',
         message: `Correct. Nice work drawing ${country.name.common}.`,
+        reasons: [evaluation.summary, ...evaluation.differences].filter(Boolean),
         flagImage: evaluatedCountry.img,
         flagAlt: `${country.name.common} flag`,
       });
@@ -107,6 +110,7 @@ function App() {
     setMatchResult({
       tone: 'miss',
       message: `Not quite. That did not match ${country.name.common}. Next country.`,
+      reasons: [evaluation.summary, ...evaluation.differences].filter(Boolean),
     });
 
     window.setTimeout(() => {
@@ -157,7 +161,10 @@ function App() {
                 src={matchResult.flagImage}
               />
             ) : null}
-            <span>{matchResult.message}</span>
+            <span className="match-result-message">{matchResult.message}</span>
+            {matchResult.reasons?.length ? (
+              <span className="match-result-reasons">{matchResult.reasons.join(' ')}</span>
+            ) : null}
           </div>
         ) : null}
       </header>
